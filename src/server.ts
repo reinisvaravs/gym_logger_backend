@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import dotenv from "dotenv";
 
+import { testDB } from "./database.js";
+
 dotenv.config();
 
 const app = express();
@@ -32,6 +34,12 @@ app.get("/health", (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
+
+  try {
+    await testDB();
+  } catch (error) {
+    console.error(error);
+  }
 });
