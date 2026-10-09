@@ -4,8 +4,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import userRoutes from "./routes/users.js";
 
-import { testDB } from "./database.js";
+import { testDB } from "./db/db.js";
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ app.get("/health", (req, res) => {
     service: "Gym Logger API",
   });
 });
+
+app.use("/users", userRoutes);
 
 const PORT = process.env.PORT || 4000;
 

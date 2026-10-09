@@ -1,0 +1,11 @@
+@baseUrl = http://localhost:4000
+
+### Register a user - expect 201; repeat to check 409
+POST {{baseUrl}}/users/register
+Content-Type: application/json
+
+{
+  "firstName": "Test",
+  "email": "test@test.com",
+  "password": "1234"
+}
