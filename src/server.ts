@@ -66,7 +66,7 @@ app.use(
 );
 
 app.use("/users", userRoutes);
-app.use(meRoutes);
+app.use("/", meRoutes);
 
 const PORT = process.env.PORT || 4000;
 
