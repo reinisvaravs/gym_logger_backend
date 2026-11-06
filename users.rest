@@ -9,3 +9,15 @@ Content-Type: application/json
   "email": "test@test.com",
   "password": "1234"
 }
+
+### Login a user
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+
+{
+  "email": "test@test.com",
+  "password": "1234"
+}
+
+### Me route
+GET {{baseUrl}}/me

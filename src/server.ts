@@ -4,11 +4,23 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import userRoutes from "./routes/users.js";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import pool from "./db/db.js";
+import userRoutes from "./routes/userAuth.js";
+import meRoutes from "./routes/me.js";
 
 import { testDB } from "./db/db.js";
 
 dotenv.config();
+
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET is required");
+}
+
+const PgSessionStore = connectPgSimple(session);
 
 const app = express();
 
@@ -33,7 +45,28 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.use(
+  session({
+    store: new PgSessionStore({
+      pool,
+      createTableIfMissing: true,
+    }),
+    secret: sessionSecret,
+    name: "gym.sid",
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  }),
+);
+
 app.use("/users", userRoutes);
+app.use(meRoutes);
 
 const PORT = process.env.PORT || 4000;
 
