@@ -136,7 +136,6 @@ router.post("/login", async (req, res) => {
     const isPasswordCorrect = await argon2.verify(userPassword, password);
 
     if (isPasswordCorrect) {
-      
       req.session.regenerate((error) => {
         if (error) {
           console.error(error);
@@ -156,7 +155,6 @@ router.post("/login", async (req, res) => {
           });
         });
       });
-
     } else {
       return res.status(401).json({
         message: "Wrong password or email",
@@ -168,6 +166,26 @@ router.post("/login", async (req, res) => {
       message: "Failed to log in",
     });
   }
+});
+
+router.post("/logout", (req, res) => {
+  req.session.destroy((error) => {
+    if (error) {
+      console.error(error);
+      return res.status(500).json({
+        message: "Failed to log out",
+      });
+    }
+
+    res.clearCookie("gym.sid", {
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return res.status(204).send();
+  });
 });
 
 export default router;

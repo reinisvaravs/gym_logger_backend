@@ -21,3 +21,6 @@ Content-Type: application/json
 
 ### Me route
 GET {{baseUrl}}/me
+
+### Logout
+POST {{baseUrl}}/users/logout
