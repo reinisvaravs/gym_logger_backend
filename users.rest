@@ -16,7 +16,7 @@ Content-Type: application/json
 
 {
   "email": "test@test.com",
-  "password": "1234"
+  "password": "12345"
 }
 
 ### Me route
@@ -30,6 +30,6 @@ PATCH {{baseUrl}}/users/change-password
 Content-Type: application/json
 
 {
-  "currentPassword": "12345",
-  "newPassword": "1234"
+  "currentPassword": "1234",
+  "newPassword": "12345"
 }

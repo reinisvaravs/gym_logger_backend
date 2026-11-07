@@ -38,14 +38,39 @@ export async function getUserById(userId: string) {
   return result.rows[0];
 }
 
-export async function changePassword(passwordHash: string, userId: string) {
-  const result = await pool.query(
-    `
-    UPDATE users
-    SET password_hash = $1
-    WHERE id = $2
-    `,
-    [passwordHash, userId],
-  );
-  return result;
+export async function changePasswordAndDeleteSessions(
+  passwordHash: string,
+  userId: string,
+) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `UPDATE users
+       SET password_hash = $1
+       WHERE id = $2`,
+      [passwordHash, userId],
+    );
+
+    if (result.rowCount !== 1) {
+      throw new Error("User not found during password update");
+    }
+
+    await client.query(
+      `DELETE FROM session
+       WHERE sess->>'userId' = $1`,
+      [userId],
+    );
+
+    await client.query("COMMIT");
+
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

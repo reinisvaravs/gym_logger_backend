@@ -3,7 +3,7 @@ import {
   registerUser,
   getUserByEmail,
   getUserById,
-  changePassword,
+  changePasswordAndDeleteSessions,
 } from "../db/users.js";
 import argon2 from "argon2";
 import validator from "validator";
@@ -223,17 +223,35 @@ router.patch("/change-password", requireJsonObject, async (req, res) => {
     if (isPasswordCorrect) {
       const passwordHash = await argon2.hash(newPassword);
 
-      const result = await changePassword(passwordHash, userId);
+      await changePasswordAndDeleteSessions(passwordHash, userId);
 
-      if (result.rowCount === 1) {
-        return res.status(200).json({
-          message: "Password changed successfully",
+      req.session.regenerate((error) => {
+        if (error) {
+          console.error(error);
+          res.clearCookie("gym.sid", { path: "/" });
+
+          return res.status(500).json({
+            message: "Password changed, but please log in again.",
+          });
+        }
+
+        req.session.userId = userId;
+
+        req.session.save((error) => {
+          if (error) {
+            console.error(error);
+            res.clearCookie("gym.sid", { path: "/" });
+
+            return res.status(500).json({
+              message: "Password changed, but please log in again.",
+            });
+          }
+
+          return res.status(200).json({
+            message: "Password changed successfully",
+          });
         });
-      } else {
-        return res.status(500).json({
-          message: "Something went wrong",
-        });
-      }
+      });
     } else {
       return res.status(401).json({
         message: "Wrong password",
