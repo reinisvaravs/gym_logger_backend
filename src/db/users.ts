@@ -74,3 +74,36 @@ export async function changePasswordAndDeleteSessions(
     client.release();
   }
 }
+
+export async function deleteUser(userId: string) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `DELETE FROM users
+      WHERE id = $1;`,
+      [userId],
+    );
+
+    if (result.rowCount !== 1) {
+      throw new Error("User not found during account deletion");
+    }
+
+    await client.query(
+      `DELETE FROM session
+       WHERE sess->>'userId' = $1`,
+      [userId],
+    );
+
+    await client.query("COMMIT");
+
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}

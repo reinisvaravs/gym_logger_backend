@@ -4,10 +4,12 @@ import {
   getUserByEmail,
   getUserById,
   changePasswordAndDeleteSessions,
+  deleteUser,
 } from "../db/users.js";
 import argon2 from "argon2";
 import validator from "validator";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
+import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = Router();
 
@@ -261,6 +263,77 @@ router.patch("/change-password", requireJsonObject, async (req, res) => {
     console.error(error);
     return res.status(500).json({
       message: "Failed to change password",
+    });
+  }
+});
+
+router.delete("/account", requireJsonObject, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      message: "You must be logged in",
+    });
+  }
+
+  const { currentPassword } = req.body;
+
+  if (
+    typeof currentPassword !== "string" ||
+    currentPassword.length > 255 ||
+    currentPassword.length < 4
+  ) {
+    return res.status(400).json({
+      message: "Password must be atleast 4 characters long",
+    });
+  }
+
+  try {
+    // Get user password hash
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Wrong password",
+      });
+    }
+
+    const userPassword = user.password_hash;
+
+    const isPasswordCorrect = await argon2.verify(
+      userPassword,
+      currentPassword,
+    );
+
+    if (isPasswordCorrect) {
+      await deleteUser(userId);
+
+      req.session.destroy((error) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({
+            message: "Account deleted, but session cleanup failed.",
+          });
+        }
+
+        res.clearCookie("gym.sid", {
+          path: "/",
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+        });
+
+        return res.status(204).send();
+      });
+    } else {
+      return res.status(401).json({
+        message: "Wrong password",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to delete account",
     });
   }
 });
