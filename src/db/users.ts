@@ -26,3 +26,26 @@ export async function getUserByEmail(email: string) {
   );
   return result.rows[0];
 }
+
+export async function getUserById(userId: string) {
+  const result = await pool.query(
+    `
+    SELECT * FROM users
+    WHERE id = $1;
+    `,
+    [userId],
+  );
+  return result.rows[0];
+}
+
+export async function changePassword(passwordHash: string, userId: string) {
+  const result = await pool.query(
+    `
+    UPDATE users
+    SET password_hash = $1
+    WHERE id = $2
+    `,
+    [passwordHash, userId],
+  );
+  return result;
+}

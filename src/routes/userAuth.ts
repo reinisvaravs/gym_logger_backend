@@ -1,22 +1,17 @@
 import { Router } from "express";
-import { registerUser, getUserByEmail } from "../db/users.js";
+import {
+  registerUser,
+  getUserByEmail,
+  getUserById,
+  changePassword,
+} from "../db/users.js";
 import argon2 from "argon2";
 import validator from "validator";
+import { requireJsonObject } from "../middleware/requireJsonObject.js";
 
 const router = Router();
 
-router.post("/register", async (req, res) => {
-  // Validate body
-  if (
-    req.body === null ||
-    typeof req.body !== "object" ||
-    Array.isArray(req.body)
-  ) {
-    return res.status(400).json({
-      message: "Request body must be a JSON object",
-    });
-  }
-
+router.post("/register", requireJsonObject, async (req, res) => {
   // Get body
   const { firstName, email, password } = req.body;
 
@@ -81,18 +76,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
-  // Validate body
-  if (
-    req.body === null ||
-    typeof req.body !== "object" ||
-    Array.isArray(req.body)
-  ) {
-    return res.status(400).json({
-      message: "Request body must be a JSON object",
-    });
-  }
-
+router.post("/login", requireJsonObject, async (req, res) => {
   // Get body
   const { email, password } = req.body;
 
@@ -186,6 +170,81 @@ router.post("/logout", (req, res) => {
 
     return res.status(204).send();
   });
+});
+
+router.patch("/change-password", requireJsonObject, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      message: "You must be logged in",
+    });
+  }
+
+  const { currentPassword, newPassword } = req.body;
+
+  if (
+    typeof newPassword !== "string" ||
+    newPassword.length > 255 ||
+    newPassword.length < 4
+  ) {
+    return res.status(400).json({
+      message: "New password must be atleast 4 characters long",
+    });
+  }
+
+  if (
+    typeof currentPassword !== "string" ||
+    currentPassword.length < 4 ||
+    currentPassword.length > 255
+  ) {
+    return res.status(400).json({
+      message: "Wrong password",
+    });
+  }
+
+  try {
+    // check if currentPassword matches
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.status(401).json({
+        message: "Couldn't find user",
+      });
+    }
+
+    const userPassword = user.password_hash;
+
+    const isPasswordCorrect = await argon2.verify(
+      userPassword,
+      currentPassword,
+    );
+
+    if (isPasswordCorrect) {
+      const passwordHash = await argon2.hash(newPassword);
+
+      const result = await changePassword(passwordHash, userId);
+
+      if (result.rowCount === 1) {
+        return res.status(200).json({
+          message: "Password changed successfully",
+        });
+      } else {
+        return res.status(500).json({
+          message: "Something went wrong",
+        });
+      }
+    } else {
+      return res.status(401).json({
+        message: "Wrong password",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to change password",
+    });
+  }
 });
 
 export default router;

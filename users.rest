@@ -24,3 +24,12 @@ GET {{baseUrl}}/me
 
 ### Logout
 POST {{baseUrl}}/users/logout
+
+### Change password
+PATCH {{baseUrl}}/users/change-password
+Content-Type: application/json
+
+{
+  "currentPassword": "12345",
+  "newPassword": "1234"
+}
