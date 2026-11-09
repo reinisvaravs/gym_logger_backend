@@ -53,3 +53,7 @@ Origin: http://localhost:5173
 Content-Type: application/json
 
 {}
+
+### Get training types
+GET {{baseUrl}}/training-types
+
