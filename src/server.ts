@@ -11,6 +11,7 @@ import userRoutes from "./routes/userAuth.js";
 import meRoutes from "./routes/me.js";
 import { requireTrustedOrigin } from "./middleware/requireTrustedOrigin.js";
 import trainingTypesRoutes from "./routes/trainingTypes.js";
+import trainingSessionsRoutes from "./routes/trainingSessions.js";
 
 import { testDB } from "./db/db.js";
 
@@ -70,6 +71,7 @@ app.use(
 
 app.use("/users", userRoutes);
 app.use("/training-types", trainingTypesRoutes);
+app.use("/training-sessions", trainingSessionsRoutes);
 app.use("/", meRoutes);
 
 const PORT = process.env.PORT || 4000;

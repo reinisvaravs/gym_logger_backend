@@ -1,0 +1,78 @@
+@baseUrl = http://localhost:4000
+@frontendOrigin = http://localhost:5173
+# Your training type IDs
+@weightedTypeId = 1
+@bodyweightTypeId = 2
+@cardioTypeId = 3
+
+### Create strength session
+POST {{baseUrl}}/training-sessions
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "trainingTypeId": "{{weightedTypeId}}",
+  "performedOn": "2026-11-09",
+  "sessionOrder": 1,
+  "notes": "Squat practice",
+  "sets": [
+    { "reps": 8, "weightKg": 40 },
+    { "reps": 6, "weightKg": 45 }
+  ]
+}
+
+### Create bodyweight session
+POST {{baseUrl}}/training-sessions
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "trainingTypeId": "{{bodyweightTypeId}}",
+  "performedOn": "2026-11-09",
+  "sessionOrder": 2,
+  "sets": [ { "reps": 10 } ]
+}
+
+### Create cardio session
+POST {{baseUrl}}/training-sessions
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "trainingTypeId": "{{cardioTypeId}}",
+  "performedOn": "2026-11-09",
+  "sessionOrder": 3,
+  "sets": [
+    {
+      "durationSeconds": 1800,
+      "distanceKm": 5,
+      "avgHeartRateBpm": 145,
+      "elevationGainM": 20
+    }
+  ]
+}
+
+### Invalid date
+POST {{baseUrl}}/training-sessions
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "trainingTypeId": "{{weightedTypeId}}",
+  "performedOn": "2026-02-30",
+  "sessionOrder": 4,
+  "sets": [ { "reps": 8, "weightKg": 40 } ]
+}
+
+### Invalid strength measurements
+POST {{baseUrl}}/training-sessions
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "trainingTypeId": "{{weightedTypeId}}",
+  "performedOn": "2026-11-09",
+  "sessionOrder": 4,
+  "sets": [ { "durationSeconds": 600, "distanceKm": 1 } ]
+}
+
