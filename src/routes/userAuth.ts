@@ -9,11 +9,11 @@ import {
 import argon2 from "argon2";
 import validator from "validator";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
-import { requireAuth } from "../middleware/requireAuth.js";
+import { authRateLimit } from "../middleware/authRateLimit.js";
 
 const router = Router();
 
-router.post("/register", requireJsonObject, async (req, res) => {
+router.post("/register", authRateLimit, requireJsonObject, async (req, res) => {
   // Get body
   const { firstName, email, password } = req.body;
 
@@ -78,7 +78,7 @@ router.post("/register", requireJsonObject, async (req, res) => {
   }
 });
 
-router.post("/login", requireJsonObject, async (req, res) => {
+router.post("/login", authRateLimit, requireJsonObject, async (req, res) => {
   // Get body
   const { email, password } = req.body;
 
@@ -174,7 +174,7 @@ router.post("/logout", (req, res) => {
   });
 });
 
-router.patch("/change-password", requireJsonObject, async (req, res) => {
+router.patch("/change-password", authRateLimit, requireJsonObject, async (req, res) => {
   const userId = req.session.userId;
 
   if (!userId) {
@@ -267,7 +267,7 @@ router.patch("/change-password", requireJsonObject, async (req, res) => {
   }
 });
 
-router.delete("/account", requireJsonObject, async (req, res) => {
+router.delete("/account", authRateLimit, requireJsonObject, async (req, res) => {
   const userId = req.session.userId;
 
   if (!userId) {

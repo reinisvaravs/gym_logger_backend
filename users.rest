@@ -2,6 +2,7 @@
 
 ### Register a user - expect 201; repeat to check 409
 POST {{baseUrl}}/users/register
+Origin: http://localhost:5173
 Content-Type: application/json
 
 {
@@ -12,6 +13,7 @@ Content-Type: application/json
 
 ### Login a user
 POST {{baseUrl}}/users/login
+Origin: http://localhost:5173
 Content-Type: application/json
 
 {
@@ -24,9 +26,11 @@ GET {{baseUrl}}/me
 
 ### Logout
 POST {{baseUrl}}/users/logout
+Origin: http://localhost:5173
 
 ### Change password
 PATCH {{baseUrl}}/users/change-password
+Origin: http://localhost:5173
 Content-Type: application/json
 
 {
@@ -36,8 +40,16 @@ Content-Type: application/json
 
 ### Delete account
 DELETE {{baseUrl}}/users/account
+Origin: http://localhost:5173
 Content-Type: application/json
 
 {
   "currentPassword": "12345"
 }
+
+### Check trusted origin
+POST {{baseUrl}}/users/login
+Origin: http://localhost:5173
+Content-Type: application/json
+
+{}

@@ -9,6 +9,7 @@ import connectPgSimple from "connect-pg-simple";
 import pool from "./db/db.js";
 import userRoutes from "./routes/userAuth.js";
 import meRoutes from "./routes/me.js";
+import { requireTrustedOrigin } from "./middleware/requireTrustedOrigin.js";
 
 import { testDB } from "./db/db.js";
 
@@ -32,6 +33,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(requireTrustedOrigin);
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json());
 app.use(cookieParser());
