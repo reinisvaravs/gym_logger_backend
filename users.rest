@@ -89,3 +89,11 @@ Origin: http://localhost:5173
 ### Invalid training type ID
 PATCH {{baseUrl}}/training-types/invalid/archive
 Origin: http://localhost:5173
+
+### Delete an owned, unused training type 
+DELETE {{baseUrl}}/training-types/{{trainingTypeId}}
+Origin: http://localhost:5173
+
+### Delete with an invalid ID
+DELETE {{baseUrl}}/training-types/invalid
+Origin: http://localhost:5173

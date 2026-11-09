@@ -5,6 +5,7 @@ import {
   renameTrainingType,
   archiveTrainingType,
   unarchiveTrainingType,
+  deleteTrainingType,
 } from "../db/trainingTypes.js";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
 
@@ -184,6 +185,39 @@ router.patch("/:id/unarchive", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Failed to unarchive training type" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const trainingTypeId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(trainingTypeId) || trainingTypeId <= 0) {
+    return res.status(404).json({ message: "Training type not found" });
+  }
+
+  try {
+    const deleted = await deleteTrainingType(userId, String(trainingTypeId));
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Training type not found" });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "23503") {
+      return res.status(409).json({
+        message: "This training type is used by sessions. Archive it instead.",
+      });
+    }
+
+    console.error(error);
+    return res.status(500).json({ message: "Failed to delete training type" });
   }
 });
 

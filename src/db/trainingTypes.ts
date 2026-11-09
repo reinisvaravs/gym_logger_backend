@@ -54,6 +54,16 @@ export async function archiveTrainingType(userId: string, trainingTypeId: string
   return result.rows[0];
 }
 
+export async function deleteTrainingType(userId: string, trainingTypeId: string) {
+  const result = await pool.query(
+    `DELETE FROM training_types
+      WHERE id = $1 AND user_id = $2`,
+    [trainingTypeId, userId],
+  );
+
+  return result.rowCount === 1;
+}
+
 export async function unarchiveTrainingType(userId: string, trainingTypeId: string) {
   const result = await pool.query(
     `UPDATE training_types
