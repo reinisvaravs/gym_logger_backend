@@ -3,6 +3,8 @@ import {
   createTrainingType,
   getTrainingTypesByUserId,
   renameTrainingType,
+  archiveTrainingType,
+  unarchiveTrainingType,
 } from "../db/trainingTypes.js";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
 
@@ -128,6 +130,60 @@ router.patch("/:id", requireJsonObject, async (req, res) => {
 
     console.error(error);
     return res.status(500).json({ message: "Failed to rename training type" });
+  }
+});
+
+router.patch("/:id/archive", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const trainingTypeId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(trainingTypeId) || trainingTypeId <= 0) {
+    return res.status(404).json({ message: "Training type not found" });
+  }
+
+  try {
+    const result = await archiveTrainingType(userId, String(trainingTypeId));
+
+    if (!result) {
+      return res.status(404).json({ message: "Training type not found" });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to archive training type" });
+  }
+});
+
+router.patch("/:id/unarchive", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const trainingTypeId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(trainingTypeId) || trainingTypeId <= 0) {
+    return res.status(404).json({ message: "Training type not found" });
+  }
+
+  try {
+    const result = await unarchiveTrainingType(userId, String(trainingTypeId));
+
+    if (!result) {
+      return res.status(404).json({ message: "Training type not found" });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to unarchive training type" });
   }
 });
 

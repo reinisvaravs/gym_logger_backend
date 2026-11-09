@@ -41,3 +41,27 @@ export async function renameTrainingType(
 
   return result.rows[0];
 }
+
+export async function archiveTrainingType(userId: string, trainingTypeId: string) {
+  const result = await pool.query(
+    `UPDATE training_types
+      SET archived_at = COALESCE(archived_at, NOW())
+      WHERE id = $1 AND user_id = $2
+      RETURNING *`,
+    [trainingTypeId, userId],
+  );
+
+  return result.rows[0];
+}
+
+export async function unarchiveTrainingType(userId: string, trainingTypeId: string) {
+  const result = await pool.query(
+    `UPDATE training_types
+      SET archived_at = NULL
+      WHERE id = $1 AND user_id = $2
+      RETURNING *`,
+    [trainingTypeId, userId],
+  );
+
+  return result.rows[0];
+}

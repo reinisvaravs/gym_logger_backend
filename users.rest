@@ -77,3 +77,15 @@ Content-Type: application/json
 {
   "trainingName": "Barbell squat"
 }
+
+### Archive an owned training type
+PATCH {{baseUrl}}/training-types/{{trainingTypeId}}/archive
+Origin: http://localhost:5173
+
+### Unarchive an owned training type
+PATCH {{baseUrl}}/training-types/{{trainingTypeId}}/unarchive
+Origin: http://localhost:5173
+
+### Invalid training type ID
+PATCH {{baseUrl}}/training-types/invalid/archive
+Origin: http://localhost:5173
