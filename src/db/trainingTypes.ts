@@ -25,3 +25,19 @@ export async function createTrainingType(
 
   return result.rows[0];
 }
+
+export async function renameTrainingType(
+  userId: string,
+  trainingTypeId: string,
+  trainingName: string,
+) {
+  const result = await pool.query(
+    `UPDATE training_types
+      SET training_name = $1
+      WHERE id = $2 AND user_id = $3
+      RETURNING *`,
+    [trainingName, trainingTypeId, userId],
+  );
+
+  return result.rows[0];
+}

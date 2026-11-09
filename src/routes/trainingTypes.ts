@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createTrainingType,
   getTrainingTypesByUserId,
+  renameTrainingType,
 } from "../db/trainingTypes.js";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
 
@@ -78,6 +79,55 @@ router.post("/", requireJsonObject, async (req, res) => {
     return res.status(500).json({
       message: "Failed to create training type",
     });
+  }
+});
+
+router.patch("/:id", requireJsonObject, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const trainingTypeId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(trainingTypeId) || trainingTypeId <= 0) {
+    return res.status(404).json({ message: "Training type not found" });
+  }
+
+  const { trainingName } = req.body;
+
+  if (
+    typeof trainingName !== "string" ||
+    trainingName.trim().length < 1 ||
+    trainingName.trim().length > 100
+  ) {
+    return res.status(400).json({
+      message: "Training name must be a string and 1-100 long",
+    });
+  }
+
+  try {
+    const result = await renameTrainingType(
+      userId,
+      String(trainingTypeId),
+      trainingName.trim(),
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Training type not found" });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "23505") {
+      return res.status(409).json({
+        message: "A training type with this name already exists",
+      });
+    }
+
+    console.error(error);
+    return res.status(500).json({ message: "Failed to rename training type" });
   }
 });
 

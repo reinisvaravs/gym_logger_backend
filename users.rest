@@ -1,4 +1,5 @@
 @baseUrl = http://localhost:4000
+@trainingTypeId = 1
 
 ### Register a user - expect 201; repeat to check 409
 POST {{baseUrl}}/users/register
@@ -65,4 +66,14 @@ Content-Type: application/json
 {
   "trainingName": "Squat",
   "category": "weighted_reps"
+}
+
+### Rename an owned training type - set trainingTypeId to its actual ID
+# Expect 200; missing or another user's ID returns 404; duplicate name returns 409.
+PATCH {{baseUrl}}/training-types/{{trainingTypeId}}
+Origin: http://localhost:5173
+Content-Type: application/json
+
+{
+  "trainingName": "Barbell squat"
 }
