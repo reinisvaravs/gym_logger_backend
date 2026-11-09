@@ -7,7 +7,7 @@ Content-Type: application/json
 
 {
   "firstName": "Test",
-  "email": "test@test.com",
+  "email": "test2@test.com",
   "password": "1234"
 }
 
@@ -17,7 +17,7 @@ Origin: http://localhost:5173
 Content-Type: application/json
 
 {
-  "email": "test@test.com",
+  "email": "test2@test.com",
   "password": "1234"
 }
 
@@ -57,3 +57,12 @@ Content-Type: application/json
 ### Get training types
 GET {{baseUrl}}/training-types
 
+### Create a training type
+POST {{baseUrl}}/training-types
+Origin: http://localhost:5173
+Content-Type: application/json
+
+{
+  "trainingName": "Squat",
+  "category": "weighted_reps"
+}
