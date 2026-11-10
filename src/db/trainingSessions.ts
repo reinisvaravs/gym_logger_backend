@@ -1,5 +1,21 @@
 import pool from "./db.js";
 
+export async function getTrainingSessionsByUserId(userId: string) {
+  const result = await pool.query(
+    `SELECT training_sessions.*,
+            to_char(training_sessions.performed_on, 'YYYY-MM-DD') AS performed_on,
+            training_types.training_name,
+            training_types.category
+     FROM training_sessions
+     JOIN training_types ON training_sessions.training_type_id = training_types.id
+     WHERE training_sessions.user_id = $1
+     ORDER BY training_sessions.performed_on DESC, training_sessions.session_order ASC`,
+    [userId],
+  );
+
+  return result.rows;
+}
+
 export type TrainingSetInput = {
   reps?: number | null;
   weightKg?: number | null;

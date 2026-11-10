@@ -5,6 +5,9 @@
 @bodyweightTypeId = 2
 @cardioTypeId = 3
 
+### Get my sessions
+GET {{baseUrl}}/training-sessions
+
 ### Create strength session
 POST {{baseUrl}}/training-sessions
 Origin: {{frontendOrigin}}

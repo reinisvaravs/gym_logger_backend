@@ -3,11 +3,28 @@ import validator from "validator";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
 import {
   createTrainingSession,
+  getTrainingSessionsByUserId,
   TrainingSessionError,
   type TrainingSetInput,
 } from "../db/trainingSessions.js";
 
 const router = Router();
+
+router.get("/", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  try {
+    const result = await getTrainingSessionsByUserId(userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to get training sessions" });
+  }
+});
 
 // Measurements may be omitted, but supplied values must be valid numbers.
 function isOptionalNumber(value: unknown) {
