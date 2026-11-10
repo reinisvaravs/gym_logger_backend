@@ -12,9 +12,10 @@ See [API-REFERENCE.md](./API-REFERENCE.md) for all implemented endpoints, reques
 - Training type creation, listing, renaming, archiving, restoring, and deletion of unused types.
 - Session creation with ordered sets in a database transaction.
 - Session listing and session details with sets.
+- Session date, order, and notes editing.
 - User ownership checks, Argon2 hashing, authentication rate limiting, and trusted-origin checks.
 
-Session editing/deletion, individual set management, history filters, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
+Session deletion, individual set management, history filters, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
 
 ## Stack
 

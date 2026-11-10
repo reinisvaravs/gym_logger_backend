@@ -15,6 +15,34 @@ GET {{baseUrl}}/training-sessions/{{sessionId}}
 ### Invalid session ID
 GET {{baseUrl}}/training-sessions/invalid
 
+### Edit session notes
+PATCH {{baseUrl}}/training-sessions/{{sessionId}}
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "notes": "Updated session notes"
+}
+
+### Move session
+PATCH {{baseUrl}}/training-sessions/{{sessionId}}
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "performedOn": "2026-11-10",
+  "sessionOrder": 1
+}
+
+### Clear notes
+PATCH {{baseUrl}}/training-sessions/{{sessionId}}
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "notes": null
+}
+
 ### Create strength session
 POST {{baseUrl}}/training-sessions
 Origin: {{frontendOrigin}}

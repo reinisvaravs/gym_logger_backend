@@ -256,6 +256,26 @@ Each returned set has this shape:
 }
 ```
 
+### PATCH /training-sessions/:id
+
+Update a session's date, position, or notes without resending its sets.
+
+```json
+{
+  "performedOn": "2026-11-10",
+  "sessionOrder": 2,
+  "notes": "Updated notes"
+}
+```
+
+All three fields are optional, but at least one must be supplied. Omitted fields retain their current values. Send `notes: null` to clear notes; strings are trimmed. Dates must use valid `YYYY-MM-DD` format; order must be a positive integer. Date and order cannot be null.
+
+When moving to another date, the existing order is retained unless a new one is supplied. If the target date/order is occupied, nothing changes and the response is `409`. The endpoint does not shift other sessions or swap their positions automatically.
+
+Success `200`: updated session fields, including `performed_on` as a date string. This response does not include sets, training name, or category; merge these fields into existing frontend state or fetch session details. Sets and the training type remain unchanged. Historical sessions can be edited even when their type is archived.
+
+Errors: `400` invalid input or no supported fields; `404` missing/inaccessible session or invalid ID; `409` occupied date/order. Login, allowed Origin, and a JSON object body are required.
+
 ### POST /training-sessions
 
 ```json
@@ -324,7 +344,7 @@ Average speed and pace are not returned yet. If displaying them from sets, use c
 
 Do not build frontend requests for these until backend support is added:
 
-- Session update and deletion.
+- Session deletion.
 - Individual set creation, editing, deletion, and reordering.
 - Changing a training type's category.
 - Filtered/paginated history, statistics, dashboard aggregates, and CSV export.

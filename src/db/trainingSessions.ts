@@ -44,6 +44,27 @@ export async function getTrainingSessionById(userId: string, sessionId: string) 
   return { ...session, sets: sets.rows };
 }
 
+export async function updateTrainingSession(
+  userId: string,
+  sessionId: string,
+  performedOn: string | undefined,
+  sessionOrder: number | undefined,
+  notes: string | null | undefined,
+) {
+  const result = await pool.query(
+    `UPDATE training_sessions
+     SET performed_on = COALESCE($1::date, performed_on),
+         session_order = COALESCE($2::integer, session_order),
+         notes = CASE WHEN $3::boolean THEN $4::text ELSE notes END
+     WHERE id = $5 AND user_id = $6
+     RETURNING *, to_char(performed_on, 'YYYY-MM-DD') AS performed_on`,
+    [performedOn ?? null, sessionOrder ?? null, notes !== undefined,
+      notes ?? null, sessionId, userId],
+  );
+
+  return result.rows[0];
+}
+
 export type TrainingSetInput = {
   reps?: number | null;
   weightKg?: number | null;

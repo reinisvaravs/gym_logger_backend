@@ -5,6 +5,7 @@ import {
   createTrainingSession,
   getTrainingSessionsByUserId,
   getTrainingSessionById,
+  updateTrainingSession,
   TrainingSessionError,
   type TrainingSetInput,
 } from "../db/trainingSessions.js";
@@ -51,6 +52,68 @@ router.get("/:id", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Failed to get training session" });
+  }
+});
+
+router.patch("/:id", requireJsonObject, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const sessionId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+    return res.status(404).json({ message: "Training session not found" });
+  }
+
+  const { performedOn, sessionOrder, notes } = req.body;
+
+  if (performedOn === undefined && sessionOrder === undefined && notes === undefined) {
+    return res.status(400).json({ message: "Provide a date, session order, or notes to update" });
+  }
+
+  if (performedOn !== undefined && (
+    typeof performedOn !== "string" ||
+    !validator.isDate(performedOn, { format: "YYYY-MM-DD", strictMode: true })
+  )) {
+    return res.status(400).json({ message: "Use a valid YYYY-MM-DD date" });
+  }
+
+  if (sessionOrder !== undefined && (
+    !Number.isSafeInteger(sessionOrder) || sessionOrder < 1
+  )) {
+    return res.status(400).json({ message: "Session order must be a positive integer" });
+  }
+
+  if (notes !== undefined && notes !== null && typeof notes !== "string") {
+    return res.status(400).json({ message: "Notes must be a string or null" });
+  }
+
+  try {
+    const result = await updateTrainingSession(
+      userId, String(sessionId), performedOn, sessionOrder,
+      typeof notes === "string" ? notes.trim() : notes,
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "Training session not found" });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof Error && "code" in error) {
+      if (error.code === "23505") {
+        return res.status(409).json({ message: "A session already uses this position on that date" });
+      }
+      if (error.code === "22003" || error.code === "22007" || error.code === "22008" || error.code === "23514") {
+        return res.status(400).json({ message: "Invalid date or session order" });
+      }
+    }
+
+    console.error(error);
+    return res.status(500).json({ message: "Failed to update training session" });
   }
 });
 
