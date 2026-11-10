@@ -4,6 +4,7 @@ import { requireJsonObject } from "../middleware/requireJsonObject.js";
 import {
   createTrainingSession,
   getTrainingSessionsByUserId,
+  getTrainingSessionById,
   TrainingSessionError,
   type TrainingSetInput,
 } from "../db/trainingSessions.js";
@@ -23,6 +24,33 @@ router.get("/", async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Failed to get training sessions" });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const sessionId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+    return res.status(404).json({ message: "Training session not found" });
+  }
+
+  try {
+    const result = await getTrainingSessionById(userId, String(sessionId));
+
+    if (!result) {
+      return res.status(404).json({ message: "Training session not found" });
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to get training session" });
   }
 });
 

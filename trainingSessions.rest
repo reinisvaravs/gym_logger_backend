@@ -4,9 +4,16 @@
 @weightedTypeId = 1
 @bodyweightTypeId = 2
 @cardioTypeId = 3
+@sessionId = 1
 
 ### Get my sessions
 GET {{baseUrl}}/training-sessions
+
+### Get session details
+GET {{baseUrl}}/training-sessions/{{sessionId}}
+
+### Invalid session ID
+GET {{baseUrl}}/training-sessions/invalid
 
 ### Create strength session
 POST {{baseUrl}}/training-sessions

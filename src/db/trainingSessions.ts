@@ -16,6 +16,34 @@ export async function getTrainingSessionsByUserId(userId: string) {
   return result.rows;
 }
 
+export async function getTrainingSessionById(userId: string, sessionId: string) {
+  const result = await pool.query(
+    `SELECT training_sessions.*,
+            to_char(training_sessions.performed_on, 'YYYY-MM-DD') AS performed_on,
+            training_types.training_name,
+            training_types.category
+     FROM training_sessions
+     JOIN training_types ON training_sessions.training_type_id = training_types.id
+     WHERE training_sessions.id = $1 AND training_sessions.user_id = $2`,
+    [sessionId, userId],
+  );
+
+  const session = result.rows[0];
+
+  if (!session) {
+    return null;
+  }
+
+  const sets = await pool.query(
+    `SELECT * FROM training_sets
+     WHERE session_id = $1
+     ORDER BY set_order`,
+    [sessionId],
+  );
+
+  return { ...session, sets: sets.rows };
+}
+
 export type TrainingSetInput = {
   reps?: number | null;
   weightKg?: number | null;

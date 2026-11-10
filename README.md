@@ -1,42 +1,32 @@
 # Gym Logger Backend
 
-Gym Logger is a personal project for tracking strength training and cardio workouts. This repository contains the backend API and PostgreSQL schema.
+Express and TypeScript API for tracking strength training and cardio. Uses PostgreSQL with raw SQL through `pg`.
 
-## Current status
+See [API-REFERENCE.md](./API-REFERENCE.md) for all implemented endpoints, request bodies, response formats, and frontend integration details.
 
-### Implemented
+## Current features
 
-- `GET /health` returns the API status, timestamp, and service name.
-- `POST /users/register` validates a user's name, email, and password, hashes the password with Argon2, and stores the account. Duplicate email addresses return `409 Conflict`.
-- PostgreSQL schema for users, training types, training sessions, and training sets.
+- Registration, login, logout, and session lookup.
+- Password changes with current-password verification and session replacement.
+- Account deletion with session cleanup and cascading training-data deletion.
+- Training type creation, listing, renaming, archiving, restoring, and deletion of unused types.
+- Session creation with ordered sets in a database transaction.
+- Session listing and session details with sets.
+- User ownership checks, Argon2 hashing, authentication rate limiting, and trusted-origin checks.
 
-### Planned / incomplete
+Session editing/deletion, individual set management, history filters, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
 
-- Login and session creation are unfinished. `POST /users/login` exists in the code, but a successful login does not yet return a response or create a session.
-- Workout-management API endpoints have not been implemented. The workout tables currently exist only in the database schema.
+## Stack
 
-## Technologies
-
-- Node.js and TypeScript
-- Express 5
-- PostgreSQL, accessed with `pg`
-- Argon2 password hashing and `validator` email validation
-- `dotenv`, `helmet`, `cors`, `cookie-parser`, and `morgan` for configuration and middleware
-
-## Database
-
-Run [`database.sql`](./database.sql) against the PostgreSQL database configured for the service. It creates:
-
-- `users`: account name, unique normalized email, password hash, and creation time.
-- `training_types`: user-owned training names categorized as `weighted_reps`, `bodyweight_reps`, or `cardio`.
-- `training_sessions`: a user's training type, date, order for that date, and optional notes.
-- `training_sets`: ordered set/measurement records linked to a session, with fields for repetitions, weight, duration, distance, heart rate, power, cadence, and elevation.
-
-Training types and sessions are associated with their owning user; deleting a user cascades to their training types and sessions. Set records cascade when their session is deleted.
+- Node.js, TypeScript, Express 5
+- PostgreSQL and `pg`
+- `express-session` and `connect-pg-simple`
+- Argon2 and `validator`
+- Helmet, CORS, Morgan, and `express-rate-limit`
 
 ## Local setup
 
-Prerequisites: Node.js with npm, and a running PostgreSQL instance.
+Use a supported Node.js LTS version, npm, and a PostgreSQL database. Supabase PostgreSQL can be used through a PostgreSQL connection; this application manages its own users and sessions rather than using Supabase Auth.
 
 1. Install dependencies:
 
@@ -44,52 +34,76 @@ Prerequisites: Node.js with npm, and a running PostgreSQL instance.
    npm install
    ```
 
-2. Create a local environment file and fill in the database connection values:
+2. Copy the environment template:
 
    ```sh
    cp .env.example .env
    ```
 
-   The required database variables are `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`. `DB_PORT` must be an integer from 1 to 65535.
+3. Fill in the configuration:
 
-   Other configuration in `.env.example`:
-   - `PORT` (optional; defaults to `4000`)
-   - `FRONTEND_URL` (the allowed frontend origin for credentialed CORS)
-   - `NODE_ENV` (controls the Morgan log format)
-   - `JWT_SECRET` (present in the template but not currently used by the implemented routes)
+   | Variable                                       | Purpose                                                                                  |
+   | ---------------------------------------------- | ---------------------------------------------------------------------------------------- |
+   | `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | PostgreSQL connection values                                                             |
+   | `DB_PORT`                                      | PostgreSQL port, integer from 1 to 65535                                                 |
+   | `SESSION_SECRET`                               | Private random cookie-signing secret; required                                           |
+   | `FRONTEND_URL`                                 | Exact allowed frontend origin, such as `http://localhost:5173`, without a trailing slash |
+   | `PORT`                                         | API port; defaults to `4000`                                                             |
+   | `NODE_ENV`                                     | `development` locally; `production` enables HTTPS-only cookies and combined request logs |
 
-   Keep real credentials in your local `.env`; do not commit them.
+   Generate a session secret with `openssl rand -hex 32`. Store it in `.env`, not in source control.
 
-3. Apply the schema to the database matching your `.env` settings. For a local PostgreSQL setup using the template's default database name:
+4. Set up the database using [database.sql](./database.sql) as the reference schema. Editing this file does not apply changes automatically. On a new database, execute it manually; do not rerun its `CREATE TABLE` statements against an existing setup. Existing databases need deliberate migrations. Supabase Data API access, RLS, and privileges are managed separately.
 
-   ```sh
-   psql -h localhost -p 5432 -U postgres -d postgres -f database.sql
-   ```
+   The session store creates its `session` table when needed. Its database role must have the necessary permissions. Keep this table inaccessible to public Data API clients.
 
-   Adjust the connection arguments to match your PostgreSQL setup.
-
-4. Start the development server:
+5. Start the backend:
 
    ```sh
    npm run dev
    ```
 
-   The API listens on `http://localhost:4000` by default. `npm run build` compiles TypeScript to `dist/`; `npm start` runs the compiled server.
+   Default API URL: `http://localhost:4000`.
 
-## API examples
+## Commands
 
-Health check:
+| Command             | Purpose                                 |
+| ------------------- | --------------------------------------- |
+| `npm run dev`       | Run TypeScript with automatic restart   |
+| `npm run typecheck` | Check TypeScript without emitting files |
+| `npm run build`     | Compile to `dist/`                      |
+| `npm start`         | Run the compiled server                 |
 
-```sh
-curl http://localhost:4000/health
-```
+## Project structure
 
-Register a user:
+- `src/server.ts`: middleware, session configuration, route mounting, and server startup.
+- `src/routes/`: HTTP handlers, validation, and responses.
+- `src/db/`: parameterized queries and transactions.
+- `src/middleware/`: authentication, body shape, origin checks, and rate limiting.
+- `src/types/`: Express session type declaration.
+- `database.sql`: reference schema, applied manually.
 
-```sh
-curl -X POST http://localhost:4000/users/register \
-  -H 'Content-Type: application/json' \
-  -d '{"firstName":"Taylor","email":"taylor@example.com","password":"example-password"}'
-```
+## Data model
 
-Registration expects `firstName` (2–100 characters), a valid email address, and a password (4–255 characters). A successful response is `201 Created` with the user's `id`, `full_name`, `email`, and `created_at`; the password hash is not returned.
+Users own reusable training types. Each training session references one type and contains ordered sets. A gym visit with two exercises is represented by two sessions on the same date.
+
+Types are categorized as `weighted_reps`, `bodyweight_reps`, or `cardio`. Archived types remain in history and can be restored. Referenced types cannot be permanently deleted. Sessions are unique by user, date, and position; sets are ordered within their session.
+
+Measurements use kilograms, kilometres, seconds, and metres. Account deletion cascades through the training tables; authentication sessions are deleted explicitly. Creating a session and its sets is atomic.
+
+## Manual testing
+
+Testing currently uses VS Code REST Client requests, not an automated test suite:
+
+- [users.rest](./users.rest): accounts, sessions, and training types.
+- [trainingSessions.rest](./trainingSessions.rest): session creation, listing, and details.
+
+Start the backend, register a disposable account, then log in. REST Client retains session cookies. Set the request-file IDs to records owned by that account. Requests that change data need the allowed `Origin` header; browsers supply it automatically.
+
+Check success cases, invalid inputs, logged-out access, duplicate names/positions, archived types, and access using another user's IDs. Account and training-type deletion requests permanently remove data.
+
+## Frontend integration
+
+Use `credentials: "include"` with fetch, including login. The backend sets an HTTP-only `gym.sid` cookie; there is no JWT to save. Use `GET /me` to check the session on app load. Registration requires a separate login request.
+
+Request bodies use camelCase; record responses use snake_case. See the [API reference](./API-REFERENCE.md) before building forms or defining response types.
