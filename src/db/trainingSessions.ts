@@ -1,5 +1,15 @@
 import pool from "./db.js";
 
+export async function deleteTrainingSession(userId: string, sessionId: string) {
+  const result = await pool.query(
+    `DELETE FROM training_sessions
+     WHERE id = $1 AND user_id = $2`,
+    [sessionId, userId],
+  );
+
+  return result.rowCount === 1;
+}
+
 export async function getTrainingSessionsByUserId(userId: string) {
   const result = await pool.query(
     `SELECT training_sessions.*,

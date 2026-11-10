@@ -15,6 +15,14 @@ GET {{baseUrl}}/training-sessions/{{sessionId}}
 ### Invalid session ID
 GET {{baseUrl}}/training-sessions/invalid
 
+### Delete session
+DELETE {{baseUrl}}/training-sessions/{{sessionId}}
+Origin: {{frontendOrigin}}
+
+### Delete invalid session
+DELETE {{baseUrl}}/training-sessions/invalid
+Origin: {{frontendOrigin}}
+
 ### Edit session notes
 PATCH {{baseUrl}}/training-sessions/{{sessionId}}
 Origin: {{frontendOrigin}}

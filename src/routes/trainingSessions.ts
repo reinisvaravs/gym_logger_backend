@@ -6,6 +6,7 @@ import {
   getTrainingSessionsByUserId,
   getTrainingSessionById,
   updateTrainingSession,
+  deleteTrainingSession,
   TrainingSessionError,
   type TrainingSetInput,
 } from "../db/trainingSessions.js";
@@ -273,6 +274,33 @@ router.post("/", requireJsonObject, async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to create training session" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const sessionId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+    return res.status(404).json({ message: "Training session not found" });
+  }
+
+  try {
+    const deleted = await deleteTrainingSession(userId, String(sessionId));
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Training session not found" });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to delete training session" });
   }
 });
 

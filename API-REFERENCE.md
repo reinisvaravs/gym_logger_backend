@@ -59,6 +59,8 @@ JSON-body endpoints require `Content-Type: application/json` and an object body.
 | GET    | `/training-sessions`            | Yes            | `200`   |
 | POST   | `/training-sessions`            | Yes            | `201`   |
 | GET    | `/training-sessions/:id`        | Yes            | `200`   |
+| PATCH  | `/training-sessions/:id`        | Yes            | `200`   |
+| DELETE | `/training-sessions/:id`        | Yes            | `204`   |
 
 The four account routes register/login/change-password/delete-account share one rate limit: **10 requests per IP per 15 minutes**, including successful and validation-failed requests that reach the limiter. Exceeding it returns `429` with `{"message":"Too many attempts. Please try again later."}`. Counters are in memory and reset on restart.
 
@@ -276,6 +278,16 @@ Success `200`: updated session fields, including `performed_on` as a date string
 
 Errors: `400` invalid input or no supported fields; `404` missing/inaccessible session or invalid ID; `409` occupied date/order. Login, allowed Origin, and a JSON object body are required.
 
+### DELETE /training-sessions/:id
+
+Delete an owned session from the history or detail screen. No body is required; include credentials and the allowed Origin.
+
+Success `204` with no response body. The database also deletes all sets belonging to the session. Other sessions retain their existing order values; gaps are allowed. The training type is not deleted.
+
+Errors: `401` without login; `404` for an invalid ID, missing session, or another user's session; `500` for unexpected failures. Repeating a successful deletion returns `404`.
+
+After success, remove the session from frontend state or refresh the session list. Do not parse a JSON body from the `204` response.
+
 ### POST /training-sessions
 
 ```json
@@ -344,7 +356,6 @@ Average speed and pace are not returned yet. If displaying them from sets, use c
 
 Do not build frontend requests for these until backend support is added:
 
-- Session deletion.
 - Individual set creation, editing, deletion, and reordering.
 - Changing a training type's category.
 - Filtered/paginated history, statistics, dashboard aggregates, and CSV export.
