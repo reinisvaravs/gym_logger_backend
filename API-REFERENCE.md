@@ -41,29 +41,29 @@ JSON-body endpoints require `Content-Type: application/json` and an object body.
 
 ## Routes at a glance
 
-| Method | Path                            | Login required | Success |
-| ------ | ------------------------------- | -------------- | ------- |
-| GET    | `/health`                       | No             | `200`   |
-| POST   | `/users/register`               | No             | `201`   |
-| POST   | `/users/login`                  | No             | `200`   |
-| POST   | `/users/logout`                 | No             | `204`   |
-| GET    | `/me`                           | Yes            | `200`   |
-| PATCH  | `/users/change-password`        | Yes            | `200`   |
-| DELETE | `/users/account`                | Yes            | `204`   |
-| GET    | `/training-types`               | Yes            | `200`   |
-| POST   | `/training-types`               | Yes            | `201`   |
-| PATCH  | `/training-types/:id`           | Yes            | `200`   |
-| PATCH  | `/training-types/:id/archive`   | Yes            | `200`   |
-| PATCH  | `/training-types/:id/unarchive` | Yes            | `200`   |
-| DELETE | `/training-types/:id`           | Yes            | `204`   |
-| GET    | `/training-sessions`            | Yes            | `200`   |
-| POST   | `/training-sessions`            | Yes            | `201`   |
-| GET    | `/training-sessions/:id`        | Yes            | `200`   |
-| PATCH  | `/training-sessions/:id`        | Yes            | `200`   |
-| DELETE | `/training-sessions/:id`        | Yes            | `204`   |
-| POST | `/training-sessions/:id/sets` | Yes | `201` |
-| PATCH | `/training-sessions/:id/sets/:setId` | Yes | `200` |
-| DELETE | `/training-sessions/:id/sets/:setId` | Yes | `204` |
+| Method | Path                                 | Login required | Success |
+| ------ | ------------------------------------ | -------------- | ------- |
+| GET    | `/health`                            | No             | `200`   |
+| POST   | `/users/register`                    | No             | `201`   |
+| POST   | `/users/login`                       | No             | `200`   |
+| POST   | `/users/logout`                      | No             | `204`   |
+| GET    | `/me`                                | Yes            | `200`   |
+| PATCH  | `/users/change-password`             | Yes            | `200`   |
+| DELETE | `/users/account`                     | Yes            | `204`   |
+| GET    | `/training-types`                    | Yes            | `200`   |
+| POST   | `/training-types`                    | Yes            | `201`   |
+| PATCH  | `/training-types/:id`                | Yes            | `200`   |
+| PATCH  | `/training-types/:id/archive`        | Yes            | `200`   |
+| PATCH  | `/training-types/:id/unarchive`      | Yes            | `200`   |
+| DELETE | `/training-types/:id`                | Yes            | `204`   |
+| GET    | `/training-sessions`                 | Yes            | `200`   |
+| POST   | `/training-sessions`                 | Yes            | `201`   |
+| GET    | `/training-sessions/:id`             | Yes            | `200`   |
+| PATCH  | `/training-sessions/:id`             | Yes            | `200`   |
+| DELETE | `/training-sessions/:id`             | Yes            | `204`   |
+| POST   | `/training-sessions/:id/sets`        | Yes            | `201`   |
+| PATCH  | `/training-sessions/:id/sets/:setId` | Yes            | `200`   |
+| DELETE | `/training-sessions/:id/sets/:setId` | Yes            | `204`   |
 
 The four account routes register/login/change-password/delete-account share one rate limit: **10 requests per IP per 15 minutes**, including successful and validation-failed requests that reach the limiter. Exceeding it returns `429` with `{"message":"Too many attempts. Please try again later."}`. Counters are in memory and reset on restart.
 
@@ -234,7 +234,18 @@ List and detail responses include `training_name` and `category`. Detail adds `s
 
 Returns `200` with an array of owned sessions, newest `performed_on` first, then ascending `session_order` within each date. Does not include sets.
 
-There are no date/category/search filters or pagination yet. The frontend can group this list by `performed_on` for the current history/calendar UI.
+Optional query parameters:
+
+| Parameter | Format       | Meaning                                 |
+| --------- | ------------ | --------------------------------------- |
+| `from`    | `YYYY-MM-DD` | Include sessions on or after this date  |
+| `to`      | `YYYY-MM-DD` | Include sessions on or before this date |
+
+Both boundaries are inclusive. Either may be omitted; with neither supplied, all owned sessions are returned. Invalid dates and a `from` later than `to` return `400`.
+
+Example for the calendar's displayed month: `GET /training-sessions?from=2026-11-01&to=2026-11-30`. Group the returned records by `performed_on` to populate calendar days. One-sided ranges are also supported, such as `?from=2026-11-01`.
+
+Category/search filters and pagination are not implemented yet.
 
 ### GET /training-sessions/:id
 
@@ -413,7 +424,7 @@ Do not build frontend requests for these until backend support is added:
 
 - Set reordering.
 - Changing a training type's category.
-- Filtered/paginated history, statistics, dashboard aggregates, and CSV export.
+- Category/search filters, pagination, statistics, dashboard aggregates, and CSV export.
 - Full user-profile lookup, email changes, or password recovery.
 
 Manual request examples are in [users.rest](./users.rest) and [trainingSessions.rest](./trainingSessions.rest).

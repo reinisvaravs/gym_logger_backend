@@ -18,6 +18,15 @@ Origin: {{frontendOrigin}}
 ### Get my sessions
 GET {{baseUrl}}/training-sessions
 
+### Get month's sessions
+GET {{baseUrl}}/training-sessions?from=2026-11-01&to=2026-11-30
+
+### Get sessions from a date
+GET {{baseUrl}}/training-sessions?from=2026-11-01
+
+### Invalid date range
+GET {{baseUrl}}/training-sessions?from=2026-11-30&to=2026-11-01
+
 ### Get session details
 GET {{baseUrl}}/training-sessions/{{sessionId}}
 

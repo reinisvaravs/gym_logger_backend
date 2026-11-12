@@ -23,8 +23,28 @@ router.get("/", async (req, res) => {
     return res.status(401).json({ message: "You must be logged in" });
   }
 
+  const { from, to } = req.query;
+
+  if (from !== undefined && (
+    typeof from !== "string" ||
+    !validator.isDate(from, { format: "YYYY-MM-DD", strictMode: true })
+  )) {
+    return res.status(400).json({ message: "from must be a valid YYYY-MM-DD date" });
+  }
+
+  if (to !== undefined && (
+    typeof to !== "string" ||
+    !validator.isDate(to, { format: "YYYY-MM-DD", strictMode: true })
+  )) {
+    return res.status(400).json({ message: "to must be a valid YYYY-MM-DD date" });
+  }
+
+  if (from !== undefined && to !== undefined && from > to) {
+    return res.status(400).json({ message: "from cannot be later than to" });
+  }
+
   try {
-    const result = await getTrainingSessionsByUserId(userId);
+    const result = await getTrainingSessionsByUserId(userId, from, to);
     return res.status(200).json(result);
   } catch (error) {
     console.error(error);

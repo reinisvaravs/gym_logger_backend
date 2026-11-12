@@ -59,7 +59,11 @@ export async function deleteTrainingSet(userId: string, sessionId: string, setId
   }
 }
 
-export async function getTrainingSessionsByUserId(userId: string) {
+export async function getTrainingSessionsByUserId(
+  userId: string,
+  from?: string,
+  to?: string,
+) {
   const result = await pool.query(
     `SELECT training_sessions.*,
             to_char(training_sessions.performed_on, 'YYYY-MM-DD') AS performed_on,
@@ -68,8 +72,10 @@ export async function getTrainingSessionsByUserId(userId: string) {
      FROM training_sessions
      JOIN training_types ON training_sessions.training_type_id = training_types.id
      WHERE training_sessions.user_id = $1
+       AND ($2::date IS NULL OR training_sessions.performed_on >= $2::date)
+       AND ($3::date IS NULL OR training_sessions.performed_on <= $3::date)
      ORDER BY training_sessions.performed_on DESC, training_sessions.session_order ASC`,
-    [userId],
+    [userId, from ?? null, to ?? null],
   );
 
   return result.rows;
