@@ -1,6 +1,6 @@
 # Gym Logger API Reference
 
-This document describes the currently implemented backend. Paths are relative to `http://localhost:4000` in local development. There is no `/api` prefix.
+This document describes the currently implemented backend. Paths are relative to `http://localhost:4000` in local development. In production, prefix every API path below with `/api` on the app's own origin (for example, `/api/users/login`). The operational `/health` endpoint remains unprefixed. See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Frontend connection
 
@@ -20,7 +20,7 @@ const response = await fetch("http://localhost:4000/users/login", {
 
 The browser stores the HTTP-only `gym.sid` cookie. Do not read it with JavaScript, store tokens, or send a Bearer header. Registration does not log the user in. Call login separately, then use `GET /me` on app load to check authentication. Logout clears the cookie.
 
-The cookie has a rolling 24-hour lifetime, `SameSite=Lax`, and is HTTPS-only in production. Cross-origin fetch requires `credentials: "include"`. Production frontend/backend domains and proxy settings still need to be finalized; the present configuration should not be assumed to support unrelated sites.
+The cookie has a rolling 24-hour lifetime, `SameSite=Lax`, and is HTTPS-only in production. Cross-origin fetch requires `credentials: "include"`. The Render deployment serves frontend and API from the same origin, with proxy trust enabled for HTTPS cookies and client IP rate limiting.
 
 For POST, PATCH, PUT, and DELETE requests, the backend requires an `Origin` header exactly matching `FRONTEND_URL`. Browsers supply this header; do not manually set it in fetch. REST Client/curl must supply it, for example `Origin: http://localhost:5173`. Missing or mismatched origins return `403`, even on public routes. GET, HEAD, and OPTIONS bypass this check.
 

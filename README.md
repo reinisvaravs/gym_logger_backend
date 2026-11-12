@@ -17,7 +17,11 @@ See [API-REFERENCE.md](./API-REFERENCE.md) for all implemented endpoints, reques
 - Adding, editing, and deleting individual sets in existing sessions.
 - User ownership checks, Argon2 hashing, authentication rate limiting, and trusted-origin checks.
 
-Set reordering, pagination, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
+Set reordering, pagination, statistics, and CSV export are not implemented yet.
+
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for the single-service Render setup. Production serves the React build and `/api` endpoints from one HTTPS origin, trusts Render's proxy, uses secure session cookies, and requires verified PostgreSQL TLS. Render deploys from this backend repository; `npm run build:render` fetches and builds the separate public frontend repository. Frontend-only updates need a manual redeploy of the Render service. Existing unprefixed local REST requests still work.
 
 ## Stack
 

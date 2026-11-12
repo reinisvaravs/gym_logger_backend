@@ -7,11 +7,15 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:render": "bash scripts/render-build.sh",
     "typecheck": "tsc --noEmit"
   },
   "author": "Reinis R. Vāravs",
   "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cookie-parser": "^1.4.10",
