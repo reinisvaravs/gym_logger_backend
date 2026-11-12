@@ -7,6 +7,14 @@
 @sessionId = 1
 @setId = 1
 
+### Delete set
+DELETE {{baseUrl}}/training-sessions/{{sessionId}}/sets/{{setId}}
+Origin: {{frontendOrigin}}
+
+### Delete invalid set
+DELETE {{baseUrl}}/training-sessions/{{sessionId}}/sets/invalid
+Origin: {{frontendOrigin}}
+
 ### Get my sessions
 GET {{baseUrl}}/training-sessions
 

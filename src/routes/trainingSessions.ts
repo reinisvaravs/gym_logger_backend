@@ -5,6 +5,7 @@ import {
   createTrainingSession,
   addTrainingSet,
   updateTrainingSet,
+  deleteTrainingSet,
   getTrainingSessionsByUserId,
   getTrainingSessionById,
   updateTrainingSession,
@@ -375,6 +376,36 @@ router.patch("/:id/sets/:setId", requireJsonObject, async (req, res) => {
 
     console.error(error);
     return res.status(500).json({ message: "Failed to update training set" });
+  }
+});
+
+router.delete("/:id/sets/:setId", async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const sessionId = Number(req.params.id);
+  const setId = Number(req.params.setId);
+
+  if (
+    !Number.isSafeInteger(sessionId) || sessionId <= 0 ||
+    !Number.isSafeInteger(setId) || setId <= 0
+  ) {
+    return res.status(404).json({ message: "Training set not found" });
+  }
+
+  try {
+    await deleteTrainingSet(userId, String(sessionId), String(setId));
+    return res.status(204).send();
+  } catch (error) {
+    if (error instanceof TrainingSessionError) {
+      return res.status(error.status).json({ message: error.message });
+    }
+
+    console.error(error);
+    return res.status(500).json({ message: "Failed to delete training set" });
   }
 });
 

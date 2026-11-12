@@ -63,6 +63,7 @@ JSON-body endpoints require `Content-Type: application/json` and an object body.
 | DELETE | `/training-sessions/:id`        | Yes            | `204`   |
 | POST | `/training-sessions/:id/sets` | Yes | `201` |
 | PATCH | `/training-sessions/:id/sets/:setId` | Yes | `200` |
+| DELETE | `/training-sessions/:id/sets/:setId` | Yes | `204` |
 
 The four account routes register/login/change-password/delete-account share one rate limit: **10 requests per IP per 15 minutes**, including successful and validation-failed requests that reach the limiter. Exceeding it returns `429` with `{"message":"Too many attempts. Please try again later."}`. Counters are in memory and reset on restart.
 
@@ -394,11 +395,23 @@ Errors: `400` invalid measurements, no supported fields, or clearing a required 
 
 Include credentials, the allowed Origin, and a JSON object body. On success, replace this set in frontend state or refresh the session details.
 
+### DELETE /training-sessions/:id/sets/:setId
+
+Remove a set from the session detail screen. No body is required. Include credentials and the allowed Origin.
+
+Success `204` with no response body. Only sets in a session owned by the logged-in user can be deleted. Remaining sets retain their order values; gaps are allowed. Set deletion is also available when the training type is archived.
+
+The session must keep at least one set. Removing its last set returns `409` with `{"message":"Cannot remove the last set. Delete the session instead."}`. The set remains unchanged. The check and deletion run in one transaction with the parent session locked.
+
+Errors: `401` without login; `404` for invalid IDs, missing/inaccessible sessions, or sets not belonging to that session; `409` for the last set; `500` for unexpected failures. Repeating a successful deletion returns `404`.
+
+On success, remove the set from frontend state or refresh session details. Do not parse JSON from a `204` response. When only one set remains, the UI can disable its remove action and offer session deletion instead.
+
 ## Not implemented yet
 
 Do not build frontend requests for these until backend support is added:
 
-- Individual set deletion and reordering.
+- Set reordering.
 - Changing a training type's category.
 - Filtered/paginated history, statistics, dashboard aggregates, and CSV export.
 - Full user-profile lookup, email changes, or password recovery.

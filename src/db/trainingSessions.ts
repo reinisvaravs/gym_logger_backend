@@ -10,6 +10,55 @@ export async function deleteTrainingSession(userId: string, sessionId: string) {
   return result.rowCount === 1;
 }
 
+export async function deleteTrainingSet(userId: string, sessionId: string, setId: string) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Serialize set changes so two deletions cannot remove the final sets together.
+    const sessionResult = await client.query(
+      `SELECT id FROM training_sessions
+       WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+      [sessionId, userId],
+    );
+
+    if (!sessionResult.rows[0]) {
+      throw new TrainingSessionError(404, "Training set not found");
+    }
+
+    const setResult = await client.query(
+      `SELECT id FROM training_sets WHERE id = $1 AND session_id = $2`,
+      [setId, sessionId],
+    );
+
+    if (!setResult.rows[0]) {
+      throw new TrainingSessionError(404, "Training set not found");
+    }
+
+    const countResult = await client.query(
+      `SELECT COUNT(*)::integer AS set_count FROM training_sets WHERE session_id = $1`,
+      [sessionId],
+    );
+
+    if (countResult.rows[0].set_count <= 1) {
+      throw new TrainingSessionError(409, "Cannot remove the last set. Delete the session instead.");
+    }
+
+    await client.query(
+      `DELETE FROM training_sets WHERE id = $1 AND session_id = $2`,
+      [setId, sessionId],
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function getTrainingSessionsByUserId(userId: string) {
   const result = await pool.query(
     `SELECT training_sessions.*,
