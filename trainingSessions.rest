@@ -12,6 +12,26 @@ GET {{baseUrl}}/training-sessions
 ### Get session details
 GET {{baseUrl}}/training-sessions/{{sessionId}}
 
+### Add strength set
+POST {{baseUrl}}/training-sessions/{{sessionId}}/sets
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "reps": 8,
+  "weightKg": 50
+}
+
+### Invalid set
+POST {{baseUrl}}/training-sessions/{{sessionId}}/sets
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "reps": -1,
+  "weightKg": 50
+}
+
 ### Invalid session ID
 GET {{baseUrl}}/training-sessions/invalid
 

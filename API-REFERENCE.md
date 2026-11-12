@@ -61,6 +61,7 @@ JSON-body endpoints require `Content-Type: application/json` and an object body.
 | GET    | `/training-sessions/:id`        | Yes            | `200`   |
 | PATCH  | `/training-sessions/:id`        | Yes            | `200`   |
 | DELETE | `/training-sessions/:id`        | Yes            | `204`   |
+| POST | `/training-sessions/:id/sets` | Yes | `201` |
 
 The four account routes register/login/change-password/delete-account share one rate limit: **10 requests per IP per 15 minutes**, including successful and validation-failed requests that reach the limiter. Exceeding it returns `429` with `{"message":"Too many attempts. Please try again later."}`. Counters are in memory and reset on restart.
 
@@ -352,11 +353,32 @@ Errors: `400` invalid fields, incompatible/missing measurements, or handled data
 
 Average speed and pace are not returned yet. If displaying them from sets, use consistent units: speed in km/h is `distanceKm * 3600 / durationSeconds`; pace in seconds/km is `durationSeconds / distanceKm` when distance is greater than zero. For multiple segments, sum distances and durations first.
 
+### POST /training-sessions/:id/sets
+
+Append one set from the session detail screen. Send the measurements directly as the JSON object, not inside a `sets` array.
+
+```json
+{
+  "reps": 8,
+  "weightKg": 50
+}
+```
+
+Uses the same measurement fields and category rules as session creation. For cardio, send `durationSeconds` and `distanceKm` with any optional cardio measurements. Bodyweight requires reps, with optional added weight.
+
+Success `201` with the created set in the same snake_case shape shown under session details. Its `set_order` is assigned automatically after the current highest order. Do not send a position. Repeated requests add additional sets; they are not deduplicated.
+
+The session must belong to the logged-in user. Sets may be added to historical sessions whose training type is archived. The ownership/category lookup and append run in a transaction, with the session locked so simultaneous appends receive different positions.
+
+Errors: `400` invalid/missing/incompatible measurements or handled database range violations; `401` without login; `404` invalid ID, missing session, or another user's session. Include credentials, the allowed Origin, and a JSON object body.
+
+After success, append the returned set to frontend state or refetch session details.
+
 ## Not implemented yet
 
 Do not build frontend requests for these until backend support is added:
 
-- Individual set creation, editing, deletion, and reordering.
+- Individual set editing, deletion, and reordering.
 - Changing a training type's category.
 - Filtered/paginated history, statistics, dashboard aggregates, and CSV export.
 - Full user-profile lookup, email changes, or password recovery.

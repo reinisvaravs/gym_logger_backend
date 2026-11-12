@@ -3,6 +3,7 @@ import validator from "validator";
 import { requireJsonObject } from "../middleware/requireJsonObject.js";
 import {
   createTrainingSession,
+  addTrainingSet,
   getTrainingSessionsByUserId,
   getTrainingSessionById,
   updateTrainingSession,
@@ -126,6 +127,52 @@ function isOptionalNumber(value: unknown) {
   );
 }
 
+function getSetValidationError(set: TrainingSetInput) {
+  if (!isOptionalNumber(set.reps) || (set.reps != null && set.reps <= 0)) {
+    return "Reps must be a positive number";
+  }
+
+  if (!isOptionalNumber(set.weightKg)) {
+    return "Weight must be zero or more";
+  }
+
+  if (
+    !isOptionalNumber(set.durationSeconds) ||
+    (set.durationSeconds != null &&
+      (!Number.isInteger(set.durationSeconds) || set.durationSeconds < 1))
+  ) {
+    return "Duration must be a positive whole number of seconds";
+  }
+
+  if (!isOptionalNumber(set.distanceKm)) {
+    return "Distance must be zero or more";
+  }
+
+  if (
+    !isOptionalNumber(set.avgHeartRateBpm) ||
+    (set.avgHeartRateBpm != null &&
+      (!Number.isInteger(set.avgHeartRateBpm) ||
+        set.avgHeartRateBpm < 20 ||
+        set.avgHeartRateBpm > 250))
+  ) {
+    return "Heart rate must be a whole number between 20 and 250";
+  }
+
+  if (!isOptionalNumber(set.avgPowerWatts)) {
+    return "Power must be zero or more";
+  }
+
+  if (!isOptionalNumber(set.avgCadence)) {
+    return "Cadence must be zero or more";
+  }
+
+  if (!isOptionalNumber(set.elevationGainM)) {
+    return "Elevation gain must be zero or more";
+  }
+
+  return null;
+}
+
 router.post("/", requireJsonObject, async (req, res) => {
   const userId = req.session.userId;
   if (!userId) {
@@ -167,58 +214,9 @@ router.post("/", requireJsonObject, async (req, res) => {
       return res.status(400).json({ message: "Each set must be an object" });
     }
 
-    if (!isOptionalNumber(set.reps) || (set.reps != null && set.reps <= 0)) {
-      return res
-        .status(400)
-        .json({ message: "Reps must be a positive number" });
-    }
-
-    if (!isOptionalNumber(set.weightKg)) {
-      return res.status(400).json({ message: "Weight must be zero or more" });
-    }
-
-    if (
-      !isOptionalNumber(set.durationSeconds) ||
-      (set.durationSeconds != null &&
-        (!Number.isInteger(set.durationSeconds) || set.durationSeconds < 1))
-    ) {
-      return res
-        .status(400)
-        .json({
-          message: "Duration must be a positive whole number of seconds",
-        });
-    }
-
-    if (!isOptionalNumber(set.distanceKm)) {
-      return res.status(400).json({ message: "Distance must be zero or more" });
-    }
-
-    if (
-      !isOptionalNumber(set.avgHeartRateBpm) ||
-      (set.avgHeartRateBpm != null &&
-        (!Number.isInteger(set.avgHeartRateBpm) ||
-          set.avgHeartRateBpm < 20 ||
-          set.avgHeartRateBpm > 250))
-    ) {
-      return res
-        .status(400)
-        .json({
-          message: "Heart rate must be a whole number between 20 and 250",
-        });
-    }
-
-    if (!isOptionalNumber(set.avgPowerWatts)) {
-      return res.status(400).json({ message: "Power must be zero or more" });
-    }
-
-    if (!isOptionalNumber(set.avgCadence)) {
-      return res.status(400).json({ message: "Cadence must be zero or more" });
-    }
-
-    if (!isOptionalNumber(set.elevationGainM)) {
-      return res
-        .status(400)
-        .json({ message: "Elevation gain must be zero or more" });
+    const message = getSetValidationError(set);
+    if (message) {
+      return res.status(400).json({ message });
     }
 
     cleanSets.push({
@@ -274,6 +272,54 @@ router.post("/", requireJsonObject, async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to create training session" });
+  }
+});
+
+router.post("/:id/sets", requireJsonObject, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const sessionId = Number(req.params.id);
+
+  if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+    return res.status(404).json({ message: "Training session not found" });
+  }
+
+  const message = getSetValidationError(req.body);
+  if (message) {
+    return res.status(400).json({ message });
+  }
+
+  const set: TrainingSetInput = {
+    reps: req.body.reps ?? null,
+    weightKg: req.body.weightKg ?? null,
+    durationSeconds: req.body.durationSeconds ?? null,
+    distanceKm: req.body.distanceKm ?? null,
+    avgHeartRateBpm: req.body.avgHeartRateBpm ?? null,
+    avgPowerWatts: req.body.avgPowerWatts ?? null,
+    avgCadence: req.body.avgCadence ?? null,
+    elevationGainM: req.body.elevationGainM ?? null,
+  };
+
+  try {
+    const result = await addTrainingSet(userId, String(sessionId), set);
+    return res.status(201).json(result);
+  } catch (error) {
+    if (error instanceof TrainingSessionError) {
+      return res.status(error.status).json({ message: error.message });
+    }
+
+    if (error instanceof Error && "code" in error) {
+      if (error.code === "22003" || error.code === "23514") {
+        return res.status(400).json({ message: "A measurement is outside the database's allowed range" });
+      }
+    }
+
+    console.error(error);
+    return res.status(500).json({ message: "Failed to add training set" });
   }
 });
 

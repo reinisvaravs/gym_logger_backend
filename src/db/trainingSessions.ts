@@ -103,6 +103,104 @@ export class TrainingSessionError extends Error {
   }
 }
 
+function validateSetCategory(category: string, set: TrainingSetInput) {
+  if (category === "cardio") {
+    if (set.durationSeconds == null || set.distanceKm == null) {
+      throw new TrainingSessionError(
+        400,
+        "cardio requires durationSeconds and distanceKm",
+      );
+    }
+    if (set.reps != null || set.weightKg != null) {
+      throw new TrainingSessionError(
+        400,
+        "cardio cannot contain reps or weightKg",
+      );
+    }
+  } else {
+    if (set.reps == null) {
+      throw new TrainingSessionError(
+        400,
+        "strength requires reps",
+      );
+    }
+    if (category === "weighted_reps" && set.weightKg == null) {
+      throw new TrainingSessionError(
+        400,
+        "weighted strength requires weightKg",
+      );
+    }
+    if (
+      set.durationSeconds != null ||
+      set.distanceKm != null ||
+      set.avgHeartRateBpm != null ||
+      set.avgPowerWatts != null ||
+      set.avgCadence != null ||
+      set.elevationGainM != null
+    ) {
+      throw new TrainingSessionError(
+        400,
+        "strength cannot contain cardio measurements",
+      );
+    }
+  }
+}
+
+export async function addTrainingSet(
+  userId: string,
+  sessionId: string,
+  set: TrainingSetInput,
+) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Lock this session so concurrent additions choose different positions.
+    const sessionResult = await client.query(
+      `SELECT training_types.category
+       FROM training_sessions
+       JOIN training_types ON training_sessions.training_type_id = training_types.id
+       WHERE training_sessions.id = $1 AND training_sessions.user_id = $2
+       FOR UPDATE OF training_sessions`,
+      [sessionId, userId],
+    );
+    const session = sessionResult.rows[0];
+
+    if (!session) {
+      throw new TrainingSessionError(404, "Training session not found");
+    }
+
+    validateSetCategory(session.category, set);
+
+    const orderResult = await client.query(
+      `SELECT COALESCE(MAX(set_order), 0) + 1 AS next_order
+       FROM training_sets WHERE session_id = $1`,
+      [sessionId],
+    );
+    const setOrder = orderResult.rows[0].next_order;
+
+    const result = await client.query(
+      `INSERT INTO training_sets
+        (session_id, set_order, reps, weight_kg, duration_seconds, distance_km,
+         avg_heart_rate_bpm, avg_power_watts, avg_cadence, elevation_gain_m)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [sessionId, setOrder, set.reps ?? null, set.weightKg ?? null,
+        set.durationSeconds ?? null, set.distanceKm ?? null,
+        set.avgHeartRateBpm ?? null, set.avgPowerWatts ?? null,
+        set.avgCadence ?? null, set.elevationGainM ?? null],
+    );
+
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function createTrainingSession(
   userId: string,
   input: TrainingSessionInput,
@@ -130,49 +228,8 @@ export async function createTrainingSession(
       );
     }
 
-    for (const [index, set] of input.sets.entries()) {
-      const prefix = `Set ${index + 1}: `;
-
-      if (trainingType.category === "cardio") {
-        if (set.durationSeconds == null || set.distanceKm == null) {
-          throw new TrainingSessionError(
-            400,
-            prefix + "cardio requires durationSeconds and distanceKm",
-          );
-        }
-        if (set.reps != null || set.weightKg != null) {
-          throw new TrainingSessionError(
-            400,
-            prefix + "cardio cannot contain reps or weightKg",
-          );
-        }
-      } else {
-        if (set.reps == null) {
-          throw new TrainingSessionError(
-            400,
-            prefix + "strength requires reps",
-          );
-        }
-        if (trainingType.category === "weighted_reps" && set.weightKg == null) {
-          throw new TrainingSessionError(
-            400,
-            prefix + "weighted strength requires weightKg",
-          );
-        }
-        if (
-          set.durationSeconds != null ||
-          set.distanceKm != null ||
-          set.avgHeartRateBpm != null ||
-          set.avgPowerWatts != null ||
-          set.avgCadence != null ||
-          set.elevationGainM != null
-        ) {
-          throw new TrainingSessionError(
-            400,
-            prefix + "strength cannot contain cardio measurements",
-          );
-        }
-      }
+    for (const set of input.sets) {
+      validateSetCategory(trainingType.category, set);
     }
 
     const sessionResult = await client.query(
