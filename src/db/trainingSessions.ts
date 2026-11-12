@@ -201,6 +201,69 @@ export async function addTrainingSet(
   }
 }
 
+export async function updateTrainingSet(
+  userId: string,
+  sessionId: string,
+  setId: string,
+  input: TrainingSetInput,
+) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const currentResult = await client.query(
+      `SELECT training_sets.*, training_types.category
+       FROM training_sets
+       JOIN training_sessions ON training_sets.session_id = training_sessions.id
+       JOIN training_types ON training_sessions.training_type_id = training_types.id
+       WHERE training_sets.id = $1 AND training_sessions.id = $2
+         AND training_sessions.user_id = $3
+       FOR UPDATE OF training_sessions, training_sets`,
+      [setId, sessionId, userId],
+    );
+    const current = currentResult.rows[0];
+
+    if (!current) {
+      throw new TrainingSessionError(404, "Training set not found");
+    }
+
+    // Omitted fields keep their stored values; null explicitly clears a field.
+    const set = {
+      reps: input.reps === undefined ? current.reps : input.reps,
+      weightKg: input.weightKg === undefined ? current.weight_kg : input.weightKg,
+      durationSeconds: input.durationSeconds === undefined ? current.duration_seconds : input.durationSeconds,
+      distanceKm: input.distanceKm === undefined ? current.distance_km : input.distanceKm,
+      avgHeartRateBpm: input.avgHeartRateBpm === undefined ? current.avg_heart_rate_bpm : input.avgHeartRateBpm,
+      avgPowerWatts: input.avgPowerWatts === undefined ? current.avg_power_watts : input.avgPowerWatts,
+      avgCadence: input.avgCadence === undefined ? current.avg_cadence : input.avgCadence,
+      elevationGainM: input.elevationGainM === undefined ? current.elevation_gain_m : input.elevationGainM,
+    };
+
+    validateSetCategory(current.category, set);
+
+    const result = await client.query(
+      `UPDATE training_sets
+       SET reps = $1, weight_kg = $2, duration_seconds = $3, distance_km = $4,
+           avg_heart_rate_bpm = $5, avg_power_watts = $6, avg_cadence = $7,
+           elevation_gain_m = $8
+       WHERE id = $9 AND session_id = $10
+       RETURNING *`,
+      [set.reps, set.weightKg, set.durationSeconds, set.distanceKm,
+        set.avgHeartRateBpm, set.avgPowerWatts, set.avgCadence,
+        set.elevationGainM, setId, sessionId],
+    );
+
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function createTrainingSession(
   userId: string,
   input: TrainingSessionInput,

@@ -4,6 +4,7 @@ import { requireJsonObject } from "../middleware/requireJsonObject.js";
 import {
   createTrainingSession,
   addTrainingSet,
+  updateTrainingSet,
   getTrainingSessionsByUserId,
   getTrainingSessionById,
   updateTrainingSession,
@@ -320,6 +321,60 @@ router.post("/:id/sets", requireJsonObject, async (req, res) => {
 
     console.error(error);
     return res.status(500).json({ message: "Failed to add training set" });
+  }
+});
+
+router.patch("/:id/sets/:setId", requireJsonObject, async (req, res) => {
+  const userId = req.session.userId;
+
+  if (!userId) {
+    return res.status(401).json({ message: "You must be logged in" });
+  }
+
+  const sessionId = Number(req.params.id);
+  const setId = Number(req.params.setId);
+
+  if (
+    !Number.isSafeInteger(sessionId) || sessionId <= 0 ||
+    !Number.isSafeInteger(setId) || setId <= 0
+  ) {
+    return res.status(404).json({ message: "Training set not found" });
+  }
+
+  const { reps, weightKg, durationSeconds, distanceKm,
+    avgHeartRateBpm, avgPowerWatts, avgCadence, elevationGainM } = req.body;
+
+  if (
+    reps === undefined && weightKg === undefined && durationSeconds === undefined &&
+    distanceKm === undefined && avgHeartRateBpm === undefined &&
+    avgPowerWatts === undefined && avgCadence === undefined && elevationGainM === undefined
+  ) {
+    return res.status(400).json({ message: "Provide at least one measurement to update" });
+  }
+
+  const message = getSetValidationError(req.body);
+  if (message) {
+    return res.status(400).json({ message });
+  }
+
+  try {
+    const result = await updateTrainingSet(
+      userId, String(sessionId), String(setId), req.body,
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof TrainingSessionError) {
+      return res.status(error.status).json({ message: error.message });
+    }
+
+    if (error instanceof Error && "code" in error) {
+      if (error.code === "22003" || error.code === "23514") {
+        return res.status(400).json({ message: "A measurement is outside the database's allowed range" });
+      }
+    }
+
+    console.error(error);
+    return res.status(500).json({ message: "Failed to update training set" });
   }
 });
 

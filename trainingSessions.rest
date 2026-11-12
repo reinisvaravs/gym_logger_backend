@@ -5,6 +5,7 @@
 @bodyweightTypeId = 2
 @cardioTypeId = 3
 @sessionId = 1
+@setId = 1
 
 ### Get my sessions
 GET {{baseUrl}}/training-sessions
@@ -30,6 +31,25 @@ Content-Type: application/json
 {
   "reps": -1,
   "weightKg": 50
+}
+
+### Edit set
+PATCH {{baseUrl}}/training-sessions/{{sessionId}}/sets/{{setId}}
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "reps": 10,
+  "weightKg": 55
+}
+
+### Invalid reps update
+PATCH {{baseUrl}}/training-sessions/{{sessionId}}/sets/{{setId}}
+Origin: {{frontendOrigin}}
+Content-Type: application/json
+
+{
+  "reps": null
 }
 
 ### Invalid session ID

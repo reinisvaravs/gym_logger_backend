@@ -14,10 +14,10 @@ See [API-REFERENCE.md](./API-REFERENCE.md) for all implemented endpoints, reques
 - Session listing and session details with sets.
 - Session date, order, and notes editing.
 - Session deletion with automatic set deletion.
-- Adding sets to existing sessions.
+- Adding and editing individual sets in existing sessions.
 - User ownership checks, Argon2 hashing, authentication rate limiting, and trusted-origin checks.
 
-Individual set editing/deletion/reordering, history filters, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
+Individual set deletion/reordering, history filters, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
 
 ## Stack
 

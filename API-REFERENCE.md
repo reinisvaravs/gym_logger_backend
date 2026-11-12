@@ -62,6 +62,7 @@ JSON-body endpoints require `Content-Type: application/json` and an object body.
 | PATCH  | `/training-sessions/:id`        | Yes            | `200`   |
 | DELETE | `/training-sessions/:id`        | Yes            | `204`   |
 | POST | `/training-sessions/:id/sets` | Yes | `201` |
+| PATCH | `/training-sessions/:id/sets/:setId` | Yes | `200` |
 
 The four account routes register/login/change-password/delete-account share one rate limit: **10 requests per IP per 15 minutes**, including successful and validation-failed requests that reach the limiter. Exceeding it returns `429` with `{"message":"Too many attempts. Please try again later."}`. Counters are in memory and reset on restart.
 
@@ -374,11 +375,30 @@ Errors: `400` invalid/missing/incompatible measurements or handled database rang
 
 After success, append the returned set to frontend state or refetch session details.
 
+### PATCH /training-sessions/:id/sets/:setId
+
+Edit measurements from the session detail screen. Both IDs must identify a set inside a session owned by the logged-in user.
+
+```json
+{
+  "reps": 10,
+  "weightKg": 55
+}
+```
+
+Send at least one measurement field from the set request table. Omitted fields keep their current values. Send `null` to clear an optional measurement, such as bodyweight added weight or cardio heart rate. Required category measurements cannot be cleared. The resulting set must still satisfy the same category rules as creation.
+
+Success `200` with the updated set in snake_case, using the set response shape shown above. Set ID, parent session, and `set_order` remain unchanged. Editing sets in historical sessions with archived training types is allowed.
+
+Errors: `400` invalid measurements, no supported fields, or clearing a required measurement; `401` without login; `404` invalid IDs, missing records, a set belonging to another session, or another user's data. Unexpected failures return `500`.
+
+Include credentials, the allowed Origin, and a JSON object body. On success, replace this set in frontend state or refresh the session details.
+
 ## Not implemented yet
 
 Do not build frontend requests for these until backend support is added:
 
-- Individual set editing, deletion, and reordering.
+- Individual set deletion and reordering.
 - Changing a training type's category.
 - Filtered/paginated history, statistics, dashboard aggregates, and CSV export.
 - Full user-profile lookup, email changes, or password recovery.
