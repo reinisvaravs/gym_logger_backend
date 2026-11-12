@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
     return res.status(401).json({ message: "You must be logged in" });
   }
 
-  const { from, to } = req.query;
+  const { from, to, search, category } = req.query;
 
   if (from !== undefined && (
     typeof from !== "string" ||
@@ -43,8 +43,18 @@ router.get("/", async (req, res) => {
     return res.status(400).json({ message: "from cannot be later than to" });
   }
 
+  if (search !== undefined && (typeof search !== "string" || search.trim().length > 100)) {
+    return res.status(400).json({ message: "Search must be a string up to 100 characters" });
+  }
+
+  if (category !== undefined && category !== "strength" && category !== "cardio") {
+    return res.status(400).json({ message: "Category must be strength or cardio" });
+  }
+
   try {
-    const result = await getTrainingSessionsByUserId(userId, from, to);
+    const result = await getTrainingSessionsByUserId(
+      userId, from, to, search?.trim(), category,
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error(error);

@@ -18,6 +18,18 @@ Origin: {{frontendOrigin}}
 ### Get my sessions
 GET {{baseUrl}}/training-sessions
 
+### Search sessions
+GET {{baseUrl}}/training-sessions?search=squat
+
+### Strength history
+GET {{baseUrl}}/training-sessions?category=strength
+
+### Filtered cardio history
+GET {{baseUrl}}/training-sessions?category=cardio&search=run&from=2026-11-01&to=2026-11-30
+
+### Invalid category
+GET {{baseUrl}}/training-sessions?category=invalid
+
 ### Get month's sessions
 GET {{baseUrl}}/training-sessions?from=2026-11-01&to=2026-11-30
 

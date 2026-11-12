@@ -11,13 +11,13 @@ See [API-REFERENCE.md](./API-REFERENCE.md) for all implemented endpoints, reques
 - Account deletion with session cleanup and cascading training-data deletion.
 - Training type creation, listing, renaming, archiving, restoring, and deletion of unused types.
 - Session creation with ordered sets in a database transaction.
-- Session listing with optional date-range filters and session details with sets.
+- Session listing with date-range, training-name, and strength/cardio filters, plus session details with sets.
 - Session date, order, and notes editing.
 - Session deletion with automatic set deletion.
 - Adding, editing, and deleting individual sets in existing sessions.
 - User ownership checks, Argon2 hashing, authentication rate limiting, and trusted-origin checks.
 
-Set reordering, category/search filters, pagination, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
+Set reordering, pagination, statistics, and CSV export are not implemented yet. The backend is still an MVP in development; deployment-specific cookie and proxy configuration remains to be finalized.
 
 ## Stack
 

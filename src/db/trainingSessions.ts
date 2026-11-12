@@ -63,6 +63,8 @@ export async function getTrainingSessionsByUserId(
   userId: string,
   from?: string,
   to?: string,
+  search?: string,
+  category?: string,
 ) {
   const result = await pool.query(
     `SELECT training_sessions.*,
@@ -74,8 +76,11 @@ export async function getTrainingSessionsByUserId(
      WHERE training_sessions.user_id = $1
        AND ($2::date IS NULL OR training_sessions.performed_on >= $2::date)
        AND ($3::date IS NULL OR training_sessions.performed_on <= $3::date)
+       AND ($4::text IS NULL OR strpos(lower(training_types.training_name), lower($4::text)) > 0)
+       AND ($5::text IS NULL OR training_types.category = $5::text
+         OR ($5::text = 'strength' AND training_types.category IN ('weighted_reps', 'bodyweight_reps')))
      ORDER BY training_sessions.performed_on DESC, training_sessions.session_order ASC`,
-    [userId, from ?? null, to ?? null],
+    [userId, from ?? null, to ?? null, search || null, category ?? null],
   );
 
   return result.rows;

@@ -241,11 +241,22 @@ Optional query parameters:
 | `from`    | `YYYY-MM-DD` | Include sessions on or after this date  |
 | `to`      | `YYYY-MM-DD` | Include sessions on or before this date |
 
-Both boundaries are inclusive. Either may be omitted; with neither supplied, all owned sessions are returned. Invalid dates and a `from` later than `to` return `400`.
+Both boundaries are inclusive. Either may be omitted; with neither supplied, no date restriction is applied. Invalid dates and a `from` later than `to` return `400`.
 
 Example for the calendar's displayed month: `GET /training-sessions?from=2026-11-01&to=2026-11-30`. Group the returned records by `performed_on` to populate calendar days. One-sided ranges are also supported, such as `?from=2026-11-01`.
 
-Category/search filters and pagination are not implemented yet.
+Additional query parameters for the history screen:
+
+| Parameter  | Values                               | Meaning                                                      |
+| ---------- | ------------------------------------ | ------------------------------------------------------------ |
+| `search`   | String, up to 100 trimmed characters | Case-insensitive substring of the training name              |
+| `category` | `strength` or `cardio`               | Strength includes both `weighted_reps` and `bodyweight_reps` |
+
+All supplied filters combine with AND. An empty or whitespace-only search applies no name filter. Search treats `%` and `_` as literal characters, not wildcards. Invalid search/category values return `400`. Omit `category` for all categories; an empty category is invalid. Returned `category` values remain the stored categories (`weighted_reps`, `bodyweight_reps`, `cardio`).
+
+Example: `GET /training-sessions?search=squat&category=strength&from=2026-11-01&to=2026-11-30`. Use URLSearchParams in the frontend to encode search text. Results include historical sessions for archived types.
+
+Pagination is not implemented yet.
 
 ### GET /training-sessions/:id
 
@@ -424,7 +435,7 @@ Do not build frontend requests for these until backend support is added:
 
 - Set reordering.
 - Changing a training type's category.
-- Category/search filters, pagination, statistics, dashboard aggregates, and CSV export.
+- Pagination, statistics, dashboard aggregates, and CSV export.
 - Full user-profile lookup, email changes, or password recovery.
 
 Manual request examples are in [users.rest](./users.rest) and [trainingSessions.rest](./trainingSessions.rest).
