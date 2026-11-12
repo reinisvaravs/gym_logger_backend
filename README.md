@@ -15,9 +15,10 @@ See [API-REFERENCE.md](./API-REFERENCE.md) for all implemented endpoints, reques
 - Session date, order, and notes editing.
 - Session deletion with automatic set deletion.
 - Adding, editing, and deleting individual sets in existing sessions.
+- Training statistics with weekly consistency, strength records and reps-at-weight progress, and cardio totals with missing-data coverage.
 - User ownership checks, Argon2 hashing, authentication rate limiting, and trusted-origin checks.
 
-Set reordering, pagination, statistics, and CSV export are not implemented yet.
+Set reordering, pagination, and CSV export are not implemented yet.
 
 ## Deployment
 

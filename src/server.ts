@@ -16,6 +16,7 @@ import meRoutes from "./routes/me.js";
 import { requireTrustedOrigin } from "./middleware/requireTrustedOrigin.js";
 import trainingTypesRoutes from "./routes/trainingTypes.js";
 import trainingSessionsRoutes from "./routes/trainingSessions.js";
+import statisticsRoutes from "./routes/statistics.js";
 
 import { testDB } from "./db/db.js";
 
@@ -89,6 +90,7 @@ api.use(
 api.use("/users", userRoutes);
 api.use("/training-types", trainingTypesRoutes);
 api.use("/training-sessions", trainingSessionsRoutes);
+api.use("/statistics", statisticsRoutes);
 api.use("/", meRoutes);
 api.use((req, res) => {
   res.status(404).json({ message: "API route not found" });

@@ -439,3 +439,33 @@ Do not build frontend requests for these until backend support is added:
 - Full user-profile lookup, email changes, or password recovery.
 
 Manual request examples are in [users.rest](./users.rest) and [trainingSessions.rest](./trainingSessions.rest).
+
+## Training progress
+
+### `GET /statistics`
+
+Requires a logged-in session. Production path: `/api/statistics`.
+
+| Query | Meaning |
+| --- | --- |
+| `to` | Required inclusive end date, `YYYY-MM-DD` |
+| `from` | Optional inclusive start date; omit for all history through `to` |
+
+Invalid dates or reversed ranges return `400`; unauthenticated requests return `401`. There is no user ID parameter: statistics always belong to the current session's user. No schema changes or additional stored statistics are required.
+
+The response has `from`, `to`, `overview`, `weekly`, `strength`, and `cardio`:
+
+- `overview.training_days`: distinct logged calendar days, regardless of exercise count.
+- `overview.strength_sets`: strength set count.
+- `overview.cardio`: recorded duration/distance, speed, heart rate, and measurement coverage.
+- `weekly`: up to 12 Monday-start weeks ending in the week containing `to`. Includes zero weeks; `strength_days` and `cardio_days` each count a date once. These can overlap. The overview totals still cover the entire selected period.
+- `strength`: logged exercise IDs/names, category, archived status, session/set history, records by weight, daily best-rep chart points for each weight, and weekly sets/reps/volume. Ties retain the earliest achievement. Records apply to the selected period, not necessarily all time. Unweighted bodyweight sets with NULL or zero added weight share one record group.
+- `cardio`: separate entries for each logged cardio training type, with summary, session history, longest recorded duration/distance, and weekly measurements. Indoor/outdoor separation comes from the user's training types, not name matching.
+
+Statistics measurements are **JSON numbers**, unlike the raw PostgreSQL decimal strings in ordinary session responses. IDs remain strings. History is oldest first; clients can reverse it for display. Session IDs on records/chart points link to existing session-detail endpoints.
+
+Cardio totals contain `duration_seconds`, nullable `distance_km`, nullable `average_speed_kmh`, nullable `average_heart_rate_bpm`, `set_count`, `distance_sets`, and `heart_rate_sets`. Speed is total eligible distance divided by total eligible logged duration. Heart rate is weighted by recorded duration. Sets missing the measurements required for each calculation are excluded from that calculation. Distance is NULL when there are sets but none has a distance; it is zero for an empty period/week. Totals sum known distances even when coverage is partial. Duration is summed independently, including rides missing distance. No GPS moving-time interpretation is made.
+
+Strength volume is the sum of recorded weight × reps within one exercise. Dumbbell weights are not doubled. Body weight itself is not inferred from notes or included in volume. The frontend omits volume for bodyweight exercises. No estimated 1RM, calorie, recovery, or fitness score is calculated.
+
+Archived exercises with history remain visible. Exercises without logged sets in the period do not appear. Empty accounts/periods return zero totals and empty exercise lists. The endpoint returns the selected period's history in one response; pagination is not implemented. See `statistics.rest` for manual requests.

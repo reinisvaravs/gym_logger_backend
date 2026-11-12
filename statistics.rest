@@ -1,0 +1,19 @@
+@baseUrl = http://localhost:4000
+
+### Overview and exercise progress (log in using users.rest first)
+GET {{baseUrl}}/statistics?from=2026-01-01&to=2026-11-12
+
+### All history through this date
+GET {{baseUrl}}/statistics?to=2026-11-12
+
+### Empty period
+GET {{baseUrl}}/statistics?from=2025-01-01&to=2025-01-31
+
+### Invalid date
+GET {{baseUrl}}/statistics?from=2026-02-30&to=2026-11-12
+
+### Reversed range
+GET {{baseUrl}}/statistics?from=2026-11-12&to=2026-01-01
+
+### Missing end date
+GET {{baseUrl}}/statistics
